@@ -1,4 +1,4 @@
-# :earth_americas: Obesity Risk Score Calculator
+# Obesity Risk Score Calculator
 
 A simple Streamlit app that helps you check your BMI and understand your risk for obesity.
 
