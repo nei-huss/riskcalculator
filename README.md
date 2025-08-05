@@ -1,19 +1,5 @@
-# :earth_americas: GDP dashboard template
+# :earth_americas: Obesity Risk Score Calculator
 
-A simple Streamlit app showing the GDP of different countries in the world.
+A simple Streamlit app that helps you check your BMI and understand your risk for obesity.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gdp-dashboard-template.streamlit.app/)
-
-### How to run it on your own machine
-
-1. Install the requirements
-
-   ```
-   $ pip install -r requirements.txt
-   ```
-
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://literate-lamp-r4pj59x6v472xj5g-8501.app.github.dev/)

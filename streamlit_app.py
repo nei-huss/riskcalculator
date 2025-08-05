@@ -1,151 +1,159 @@
 import streamlit as st
-import pandas as pd
-import math
-from pathlib import Path
+import io
 
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
+# ---- Page Setup ----
+st.set_page_config(page_title="Obesity Risk Score Calculator", layout="centered")
+
+# ---- Custom Styling ----
+st.markdown("""
+    <style>
+    .subtitle {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 1.5rem 0 0.75rem 0;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("Obesity Risk Score Calculator")
+st.caption("Understand your weight category and get personalized health insights.")
+
+# ---- Input Fields (Stacked with Default Placeholder) ----
+age = st.selectbox("Age", ["Select..."] + list(range(20, 60)))
+gender = st.selectbox("Gender", ["Select...", "Male", "Female", "Other"])
+height_ft = st.selectbox("Height (feet)", ["Select..."] + list(range(4, 7)))
+height_in = st.selectbox("Height (inches)", ["Select..."] + list(range(0, 12)))
+weight_lbs = st.selectbox("Weight (lbs)", ["Select..."] + list(range(90, 351)))
+
+# ---- Input Validation ----
+if "Select..." in [age, gender, height_ft, height_in, weight_lbs]:
+    st.warning("Please fill out all fields above to calculate your BMI.")
+    st.stop()
+
+# ---- Health Conditions ----
+st.markdown('<div class="subtitle">Health Conditions (Select all that apply)</div>', unsafe_allow_html=True)
+has_hypertension = st.checkbox("High blood pressure (hypertension)")
+has_diabetes = st.checkbox("Type 2 diabetes")
+is_smoker = st.checkbox("Smoker (current or recent)")
+
+# ---- BMI Calculation ----
+st.markdown("---")
+st.subheader("🔍 Results")
+
+total_height_in = (height_ft * 12) + height_in
+bmi = round((weight_lbs / (total_height_in ** 2)) * 703)
+
+if bmi < 18.5:
+    bmi_category = "Underweight"
+elif 18.5 <= bmi < 25:
+    bmi_category = "Healthy weight"
+elif 25 <= bmi < 30:
+    bmi_category = "Overweight"
+elif 30 <= bmi < 35:
+    bmi_category = "Obese (Class I)"
+elif 35 <= bmi < 40:
+    bmi_category = "Obese (Class II)"
+else:
+    bmi_category = "Severe Obesity (Class III)"
+
+st.metric("Your BMI", f"{bmi}")
+st.write(f"**Weight Category:** {bmi_category}")
+
+# ---- BMI-Based Health Insight ----
+bmi_insights = {
+    "Underweight": "You may be at risk of nutritional deficiencies. Consider consulting a provider.",
+    "Healthy weight": "You're in a healthy range. Keep up the good habits!",
+    "Overweight": "You may benefit from increased physical activity and mindful eating.",
+    "Obese (Class I)": "Your weight may be increasing health risks. Consider professional guidance.",
+    "Obese (Class II)": "There's a higher risk of chronic conditions. It's important to take action.",
+    "Severe Obesity (Class III)": "Significant health risks are present. Seek medical support to manage weight safely."
+}
+
+bmi_actions = {
+    "Underweight": [
+        "Eat nutrient-rich meals with healthy fats and protein.",
+        "Track your weight and consult a provider for underlying causes."
+    ],
+    "Healthy weight": [
+        "Exercise for about 30 minutes a day, 5 days a week.",
+        "Monitor your BMI, waist size, and blood pressure once a year."
+    ],
+    "Overweight": [
+        "Minimize added sugars by choosing water over soft drinks and sweetened juices.",
+        "Daily walking (30 minutes) contributes to improved metabolic and heart health.",
+        "Clinically recommended: aim to lose 5–10% of body weight within 3–6 months to improve health markers."
+    ],
+    "Obese (Class I)": [
+        "Start meal prepping and increase physical activity to 3x/week.",
+        "Consult your doctor about a structured weight management plan."
+    ],
+    "Obese (Class II)": [
+        "Adopt a consistent daily routine for meals and activity.",
+        "Track glucose, blood pressure, and cholesterol regularly."
+    ],
+    "Severe Obesity (Class III)": [
+        "Consult a medical provider about weight loss options.",
+        "Consider clinical programs or support groups for ongoing help."
+    ]
+}
+
+st.info(bmi_insights.get(bmi_category, "Consult a healthcare provider for personalized advice."))
+st.markdown("---")
+st.markdown("#### 🎯 Recommended Next Steps")
+for tip in bmi_actions.get(bmi_category, []):
+    st.write(f"- {tip}")
+
+# ---- Condition-Based Recommendations ----
+condition_advice = []
+
+if has_hypertension:
+    condition_advice.append("Because you have high blood pressure, even a 5–10% weight loss can lower your BP. Reduce sodium, get regular exercise, and track your blood pressure.")
+
+if has_diabetes:
+    condition_advice.append("Managing your weight is key for blood sugar control. Increase fiber intake, cut down refined carbs, and monitor glucose regularly.")
+
+if is_smoker:
+    condition_advice.append("Quitting smoking improves health. If you’ve recently quit, stay active and choose whole foods to manage post-quit weight gain.")
+
+if condition_advice:
+    st.markdown("#### 🧬 Condition-Specific Guidance")
+    for note in condition_advice:
+        st.write(f"- {note}")
+
+# ---- Save/Share ----
+st.markdown("---")
+st.markdown("#### 🔐 Save Your Results")
+
+# Build a summary string
+summary = f"""Obesity Risk Score Summary
+
+Age: {age}
+Gender: {gender}
+Height: {height_ft} ft {height_in} in
+Weight: {weight_lbs} lbs
+
+BMI: {bmi}
+Weight Category: {bmi_category}
+
+Health Insights:
+- {bmi_insights.get(bmi_category, '')}
+
+Lifestyle Tips:
+"""
+for tip in bmi_actions.get(bmi_category, []):
+    summary += f"- {tip}\n"
+
+if condition_advice:
+    summary += "\nCondition-Specific Guidance:\n"
+    for note in condition_advice:
+        summary += f"- {note}\n"
+
+# Download as .txt
+buffer = io.StringIO()
+buffer.write(summary)
+st.download_button(
+    label="Download Results Here",
+    data=buffer.getvalue(),
+    file_name="obesity_risk_score.txt",
+    mime="text/plain"
 )
-
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
-
-@st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
-
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
-
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
-
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
-
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
-    )
-
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
-
-    return gdp_df
-
-gdp_df = get_gdp_data()
-
-# -----------------------------------------------------------------------------
-# Draw the actual page
-
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
-
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
-
-# Add some spacing
-''
-''
-
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
-
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
-
-countries = gdp_df['Country Code'].unique()
-
-if not len(countries):
-    st.warning("Select at least one country")
-
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
-
-''
-''
-''
-
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
-st.header('GDP over time', divider='gray')
-
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
